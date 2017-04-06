@@ -1,4 +1,3 @@
-package sample;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -37,7 +36,7 @@ public class Main extends Application {
         root = new Pane();
         root.setPrefSize(1080, 720);
 
-        try(InputStream is = Files.newInputStream(Paths.get("/Users/jaredwheeler/Documents/CSCE 315 Homework/TeamProjectTwo/src/myKalahBackground.jpg"))){
+        try(InputStream is = Files.newInputStream(Paths.get("images/myKalahBackground.jpg"))){
             ImageView img = new ImageView(new Image(is));
             img.setFitWidth(1080);
             img.setFitHeight(720);

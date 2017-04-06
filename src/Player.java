@@ -1,7 +1,4 @@
-package sample;
-
 import java.applet.Applet;
-import sample.AI;
 
 /**
  * Created by jaredwheeler on 3/28/17.

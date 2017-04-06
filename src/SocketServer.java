@@ -1,5 +1,3 @@
-package sample;
-
 import static java.lang.System.*;
 
 import java.io.*;

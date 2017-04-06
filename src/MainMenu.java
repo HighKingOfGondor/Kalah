@@ -1,5 +1,3 @@
-package sample;
-
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
