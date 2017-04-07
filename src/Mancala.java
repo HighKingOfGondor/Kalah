@@ -1,78 +1,107 @@
-import java.util.Random;
+import org.apache.commons.cli.ParseException;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Random;
+import java.util.Vector;
+
+/**
+ * Created by jaredwheeler on 4/6/17.
+ */
 public class Mancala {
 
-    //Init Board Members
-    private boolean AI;
-    private boolean random;
-    private int initSeedCount; //Seeds in each pocket at to start game
+    private int[][] houses = new int[2][7];
 
-    SocketServer socketServer = new SocketServer();
+    Thread thread;
+    Mancala.Player player;
+    Vector<Mancala.Player> players;
 
-    //Board facilities
-    private House[][] houses = new House[2][7]; //houses[0][i] == top && houses[1][i] == bottom
-    public Player player1;	//client player
-    public Player player2;  //AI == true -> p2.player == false
+    String convert = "";
+    int seeds = 0;
+    int time = 0;
+    boolean random = false;
+    boolean first = true;
 
 
-    public Mancala(int seed, boolean AI) {
-        initSeedCount = seed;
-        this.AI = AI;
-        player1 = new Player(false, 1);
-        player2 = new Player(AI, 2);
-
-        initBoard();
-        print();
+    Mancala (Object seeds, Object time, Object random, Thread thread) {
+        convert = seeds.toString();
+        this.seeds = Integer.parseInt(convert);
+        convert = time.toString();
+        this.time = Integer.parseInt(convert);
+        convert = random.toString();
+        if (convert == "S")
+            this.random = false;
+        else if (convert == "R")
+            this.random = true;
+        this.thread = thread;
     }
 
-    /*		Example board setup		*/
-	/*
-	 *		6	6	6	6	6	6
-	 *	0							0
-	 *		6	6	6	6	6	6
-	*/
-    public void initBoard() {
+    private void initBoard() {
         if(random){ //init seed count irrelevant
             for (int i = 0; i < 6; i++) {
                 Random rand = new Random();
                 int n = rand.nextInt(3) + 0;
-                houses[0][i]= new House(player1, n);
-                houses[1][i]= new House(player2, n);
+                houses[0][i]= n;
+                houses[1][i]= n;
             }
-        }else{ //Revisit for seedsLeft
-            int seedsLeft = initSeedCount;
-            for (int i = 0; i < houses[0].length; ++i)
+        } else {
+            int seedsLeft = seeds;
+            for (int i = 0; i < houses[0].length; ++i) {
                 if (i == houses[0].length - 1) {
-                    houses[0][i] = new House(player1, 0);
-                    houses[1][i] = new House(player2, 0);
+                    houses[0][i] = 0;
+                    houses[1][i] = 0;
                 } else {
-                    houses[0][i] = new House(player1, 6);
-                    houses[1][i] = new House(player2, 6);
+                    houses[0][i] = 6;
+                    houses[1][i] = 6;
                 }
+            }
         }
     }
 
-    //TODO
-    //check if last deposit was home pit
-    //check if any seed steals are permitted
-    //Dont deposit in enemy home bin
-    public void takeTurn(int selector){
-        if(selector == 7) //cannot move seeds from home pit
-            return;
+    public char getWinner() {
+        if (houses[0][7] > houses[1][7])
+            return 'F';
+        else if (houses[0][7] < houses[1][7])
+            return 'S';
+        else
+            return 'T';
+    }
 
-        int side = getTurn();
-        int distribute = houses[getTurn()][selector].integer;
+    public String getGameInfo(char paramChar) {
+        if (random == false) {
+            String str = String.format("INFO %d %d %d %c %s", new Object[] {seeds, time, "S"});
+            return str;
+        }
+        return "";
+    }
+
+    public int[][] updateBoard (int[][] houses, int selector, char player) {
+        int side = 2;
+        if (player == 'F') {
+            side = 0;
+        } else if (player == 'S') {
+            side = 1;
+        } else {
+            System.err.println("Bad things just happened. Player char was wrong");
+        }
+        if(selector == 7) { //cannot move seeds from home pit
+            return null;
+        }
+        int distribute = houses[side][selector];
         int pit = selector + 1;
-        houses[getTurn()][selector].integer = 0;
+        houses[side][selector] = 0;
 
         //loop through to spread seeds
         //check final seed location to possibly collect opposite seeds
         //check final seed location if home pit, if so take turn again
 
         while(distribute > 0) { //loop until all seeds are spread
-            while(pit < 7 && distribute > 0){ //loop through current side
+            while (pit < 7 && distribute > 0) { //loop through current side
                 //if(side == getTurn()) { //depositing on our side
-                ++houses[side][pit].integer;
+                ++houses[side][pit];
                 --distribute;
                 ++pit;
 				/*} else { //depositing on enemy side
@@ -87,78 +116,67 @@ public class Mancala {
             }
 
             //reset pit if not done distributing
-            if(distribute > 0)
+            if (distribute > 0)
                 pit = 0;
 
             side = 1 - side; //alternate 0,1
         }
-
-        //steal opponents seeds?
-		/*--pit; // last house placed in
-		int steal_index = 5 - pit;
-		if(houses[getTurn()][pit].integer == 1 && pit != 6) {
-			houses[getTurn()][6].integer = houses[1-getTurn()][steal_index].integer + 1;
-			houses[getTurn()][pit].integer = 0;
-			houses[getTurn()][steal_index].integer = 0;
-		}*/
-
-        //Other players turn if pit != home pit
-        //if (pit != 7) {
-        player1.setTurn(player2.turn);
-        player2.setTurn(!player1.getTurn());
-        //}
-
         print();
+        return houses;
     }
 
-    public void AI() {
-        // TODO Auto-generated method stub
-
+    public int[][] getBoard() {
+        return houses;
     }
 
-    //kinda gross but it works
-    //prints houses to console
     public void print() {
         System.out.print("\t");
         for (int i = houses[0].length-2; i >= 0; i--)
-            System.out.print(houses[0][i].integer + "\t");
+            System.out.print(houses[0][i] + "\t");
 
-        System.out.println("\n"+ houses[0][6].integer + "\t\t\t\t\t\t\t" + houses[1][6].integer);
+        System.out.println("\n"+ houses[0][6] + "\t\t\t\t\t\t\t" + houses[1][6]);
 
         System.out.print("\t");
         for (int i = 0; i < houses[1].length-1; i++)
-            System.out.print(houses[1][i].integer + "\t");
+            System.out.print(houses[1][i] + "\t");
 
         System.out.print("\n------------------------------------------------------------\n");
     }
 
-    private void pie(){
-        //implement pie rule
-    }
-
-    public House getHouseVal (int i, int j) {
-        return houses[i][j];
-    }
-
-    protected Player getP1() {
-        return player1;
-    }
-
-    protected Player getP2() {
-        return player2;
-    }
-
-    protected void setP1(Player p1) {
-        this.player1 = p1;
-    }
-
-    protected void setP2(Player p2) {
-        this.player2 = p2;
-    }
-
-    protected int getTurn() {
-        return player1.turn ? 1 : 0;
-        //int representation of who is going
-        //useful for getting index for side of starting move
+    class Player extends Thread {
+        boolean isAI = false;
+        boolean firstOrSecond = false;
+        int playerID = 0;
+        Player player;
+        String convert = "";
+        Socket socket;
+        BufferedReader in;
+        PrintWriter out;
+        public Player (Socket socket, boolean firstOrSecond, Object convert) {
+            this.socket = socket;
+            this.playerID = playerID;
+            this.firstOrSecond = firstOrSecond;
+            this.convert = convert.toString();
+            this.playerID = Integer.parseInt(this.convert);
+            try {
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
+                out.println("WELCOME");
+            } catch (IOException e) {
+                System.out.println("Player" + playerID + " disconnected" + e);
+            }
+        }
+        public void setOpponent (Player player) {
+            this.player = player;
+        }
+        public void message (String string) {
+            out.println(string);
+        }
+        public void notify (String string) {
+            player.message(string);
+            if (player.isAI == true) {
+                player.message("BOARD" + getBoard());
+            }
+        }
     }
 }
