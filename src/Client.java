@@ -15,9 +15,10 @@ public class Client
     private BufferedReader in;
     private PrintWriter out;
     int seeds = 0;
-    public Client(String paramString, int paramInt) throws Exception
+    int[][] houses = new int[2][7];
+    public Client(String address, int port) throws Exception
     {
-        socket = new Socket(paramString, paramInt);
+        socket = new Socket(address, port);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
     }
@@ -56,40 +57,37 @@ public class Client
         try
         {
             for (;;) {
-                String str1 = this.in.readLine();
-                System.out.println("SERVER MESSAGE: " + str1);
-                String[] arrayOfString;
-                if (str1.startsWith("INFO")) {
+                String inLines = this.in.readLine();
+                System.out.println("SERVER MESSAGE: " + inLines);
+                String[] stringCommands;
+                if (inLines.startsWith("INFO")) {
                     this.out.println("READY");
                     this.out.println("I'M_SERVERSIDE_AI");
-
-                    arrayOfString = str1.split(" ");
-                    this.seeds = Integer.parseInt(arrayOfString[2]);
+                    stringCommands = inLines.split(" ");
+                    this.seeds = Integer.parseInt(stringCommands[2]);
                     System.out.println("Seeds per pocket: " + String.valueOf(this.seeds));
-
-                } else if (str1.startsWith("BOARD")) {
-                    arrayOfString = str1.split(" ");
+                } else if (inLines.startsWith("BOARD")) {
+                    stringCommands = inLines.split(" ");
                     int[][] arr = new int[2][7];
                     for (int i = 0; i < 2; i++) {
-                        //arrayOfInt[(i - 1)] = Integer.parseInt(arrayOfString[i]);
                         for (int j = 0; j < 7; j++) {
-                            arr[i][j] = Integer.parseInt(arrayOfString[j + (i * j)]);
+                            arr[i][j] = Integer.parseInt(stringCommands[j + (i * j)]);
                         }
                     }
-                    String str2 = "";
+                    String boardLine = "";
                     for (int i = 0; i < 2; i++) {
                         for (int j = 0; j < 7; j++) {
                             if (arr[0][j] > 0) {
-                                str2 = str2 + " " + String.valueOf(j + 1);
-                                int[][] houses = updateBoard(arr, j, 'F');
+                                boardLine = boardLine + " " + String.valueOf(j + 1);
+                                houses = updateBoard(arr, j, 'F');
                             }
                         }
                     }
-                    this.out.println(str2.trim());
-                } else if (!str1.startsWith("OK")) {
-                    if ((str1.startsWith("ILLEGAL")) ||
-                            (str1.startsWith("WINNER")) ||
-                            (str1.startsWith("LOSER"))) {
+                    this.out.println(boardLine.trim());
+                } else if (!inLines.startsWith("OK")) {
+                    if ((inLines.startsWith("ILLEGAL")) ||
+                            (inLines.startsWith("WINNER")) ||
+                            (inLines.startsWith("LOSER"))) {
                         break;
                     }
                     this.out.println("OK");
@@ -100,11 +98,11 @@ public class Client
         }
     }
 
-    public static void main(String[] paramArrayOfString) throws Exception {
+    public static void main(String[] stringCommands) throws Exception {
         for (;;)
         {
-            Client localKalahClient = new Client(paramArrayOfString[0], Integer.parseInt(paramArrayOfString[1]));
-            localKalahClient.play();
+            Client client = new Client(stringCommands[0], Integer.parseInt(stringCommands[1]));
+            client.play();
         }
     }
 }

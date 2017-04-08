@@ -31,7 +31,7 @@ public class Server {
         return options;
     }
 
-    private static void startServer(CommandLine commandLine)
+    private static void startServer(CommandLine commands)
     {
         try
         {
@@ -39,31 +39,31 @@ public class Server {
             {
                 public void run()
                 {
-                    ServerSocket localServerSocket = null;
+                    ServerSocket socket = null;
                     try
                     {
-                        localServerSocket = new ServerSocket(Integer.parseInt(commandLine.getOptionValue("port")));
+                        socket = new ServerSocket(Integer.parseInt(commands.getOptionValue("port")));
                         for (;;)
                         {
                             Mancala mancala;
-                            if (commandLine.getParsedOptionValue("random") == null) {
-                                mancala = new Mancala(commandLine.getParsedOptionValue("seeds"), commandLine.getParsedOptionValue("time"), "S", this);
+                            if (commands.getParsedOptionValue("random") == null) {
+                                mancala = new Mancala(commands.getParsedOptionValue("seeds"), commands.getParsedOptionValue("time"), "S", this);
                             } else {
-                                mancala = new Mancala(commandLine.getParsedOptionValue("seeds"), commandLine.getParsedOptionValue("time"), commandLine.getParsedOptionValue("random"), this);
+                                mancala = new Mancala(commands.getParsedOptionValue("seeds"), commands.getParsedOptionValue("time"), commands.getParsedOptionValue("random"), this);
                             }
                             Mancala kek = mancala;
                             kek.getClass();
-                            Mancala.Player localPlayer1 = kek.new Player(localServerSocket.accept(), true, commandLine.getParsedOptionValue("playerIDOne"));
+                            Mancala.Player playerOne = kek.new Player(socket.accept(), true, commands.getParsedOptionValue("playerIDOne"));
                             Mancala lol = mancala;
                             lol.getClass();
-                            Mancala.Player localPlayer2 = lol.new Player(localServerSocket.accept(), false, commandLine.getParsedOptionValue("playerIDTwo"));
-                            localPlayer1.setOpponent(localPlayer2);
-                            localPlayer2.setOpponent(localPlayer1);
-                            mancala.player = localPlayer1;
-                            mancala.players.add(localPlayer2);
-                            mancala.players.add(localPlayer1);
-                            localPlayer1.start();
-                            localPlayer2.start();
+                            Mancala.Player playerTwo = lol.new Player(socket.accept(), false, commands.getParsedOptionValue("playerIDTwo"));
+                            playerOne.setOpponent(playerTwo);
+                            playerTwo.setOpponent(playerOne);
+                            mancala.player = playerOne;
+                            mancala.players.add(playerTwo);
+                            mancala.players.add(playerOne);
+                            playerOne.start();
+                            playerTwo.start();
                         }
                     } catch (IOException localIOException) {
                         localIOException.printStackTrace();
@@ -81,10 +81,10 @@ public class Server {
     public static void main(String[] args) throws Exception {
         Options options = initOptions();
         DefaultParser defaultParser = new DefaultParser();
-        CommandLine commandLine = null;
+        CommandLine commands = null;
         try {
-            commandLine = defaultParser.parse(options, args);
-            startServer(commandLine);
+            commands = defaultParser.parse(options, args);
+            startServer(commands);
         } catch (ParseException pe) {
             System.err.println("Parse failed: " + pe);
             HelpFormatter helpFormatter = new HelpFormatter();

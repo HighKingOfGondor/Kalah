@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 
 /**
@@ -18,10 +20,11 @@ public class Mancala {
     Thread thread;
     Mancala.Player player;
     Vector<Mancala.Player> players;
-
+    Timer timeWatch;
+    Mancala.KillGameTask time = null;
+    int timer = 0;
     String convert = "";
     int seeds = 0;
-    int time = 0;
     boolean random = false;
     boolean first = true;
 
@@ -30,7 +33,7 @@ public class Mancala {
         convert = seeds.toString();
         this.seeds = Integer.parseInt(convert);
         convert = time.toString();
-        this.time = Integer.parseInt(convert);
+        this.timer = Integer.parseInt(convert);
         convert = random.toString();
         if (convert == "S")
             this.random = false;
@@ -146,6 +149,59 @@ public class Mancala {
         System.out.print("\n------------------------------------------------------------\n");
     }
 
+
+    public void killGame()
+    {
+        try
+        {
+            for (Mancala.Player player : this.players)
+            {
+                System.out.println("Closing socket ...");
+                player.socket.close();
+                System.out.println("Joining thread ...");
+                player.join(1L);
+            }
+            this.players.clear();
+        }
+        catch (Exception localException)
+        {
+            System.out.println("Got error when trying to terminate clients: " + localException);
+        }
+        System.exit(0);
+    }
+
+    public void clearTimer()
+    {
+        this.time.cancel();
+    }
+
+    public void setTimer(Mancala.Player passedPlayer, int timer)
+    {
+        System.out.println("Setting timer for player " + passedPlayer.playerID);
+        this.time = new Mancala.KillGameTask(passedPlayer);
+        this.timeWatch.schedule(this.time, timer);
+        System.out.println(this.timeWatch);
+    }
+
+    class KillGameTask extends TimerTask
+    {
+        private Mancala.Player player;
+        KillGameTask(Mancala.Player player)
+        {
+            this.player = player;
+        }
+        public void run()
+        {
+            System.out.println("Time out!");
+            System.out.println("Player " + this.player.player.playerID + " WON");
+            System.out.println("Player " + this.player.playerID + " LOST");
+            this.player.message("TIME");
+            this.player.message("LOSER");
+            this.player.notify("TIME");
+            this.player.notify("WINNER");
+            Mancala.this.killGame();
+        }
+    }
     class Player extends Thread {
         boolean isAI = false;
         boolean firstOrSecond = false;
@@ -157,7 +213,6 @@ public class Mancala {
         PrintWriter out;
         public Player (Socket socket, boolean firstOrSecond, Object convert) {
             this.socket = socket;
-            this.playerID = playerID;
             this.firstOrSecond = firstOrSecond;
             this.convert = convert.toString();
             this.playerID = Integer.parseInt(this.convert);
