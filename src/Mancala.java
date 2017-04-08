@@ -36,6 +36,9 @@ public class Mancala {
             this.random = false;
         else if (convert == "R")
             this.random = true;
+        else {
+            this.random = false;
+        }
         this.thread = thread;
     }
 

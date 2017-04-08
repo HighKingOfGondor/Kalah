@@ -27,7 +27,7 @@ public class Server {
         options.addOption(Option.builder("seeds").hasArg().required().desc("seeds per house").build());
         options.addOption(Option.builder("time").hasArg().required().desc("time per turn").build());
         options.addOption(Option.builder("singlePlayer").desc("single or multi player").build());
-        options.addOption(Option.builder("random").desc("random init").build());
+        options.addOption(Option.builder("random").hasArg().desc("random init").build());
         return options;
     }
 
@@ -45,7 +45,12 @@ public class Server {
                         localServerSocket = new ServerSocket(Integer.parseInt(commandLine.getOptionValue("port")));
                         for (;;)
                         {
-                            Mancala mancala = new Mancala(commandLine.getParsedOptionValue("seeds"), commandLine.getParsedOptionValue("time"), commandLine.getParsedOptionValue("random"), this);
+                            Mancala mancala;
+                            if (commandLine.getParsedOptionValue("random") == null) {
+                                mancala = new Mancala(commandLine.getParsedOptionValue("seeds"), commandLine.getParsedOptionValue("time"), "S", this);
+                            } else {
+                                mancala = new Mancala(commandLine.getParsedOptionValue("seeds"), commandLine.getParsedOptionValue("time"), commandLine.getParsedOptionValue("random"), this);
+                            }
                             Mancala kek = mancala;
                             kek.getClass();
                             Mancala.Player localPlayer1 = kek.new Player(localServerSocket.accept(), true, commandLine.getParsedOptionValue("playerIDOne"));

@@ -14,65 +14,13 @@ public class Client
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-
+    int seeds = 0;
     public Client(String paramString, int paramInt) throws Exception
     {
         socket = new Socket(paramString, paramInt);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
     }
-
-    /*public Pair<int[], Boolean> updateBoard(int[][] paramArrayOfInt, int paramInt, char paramChar) {
-        int currentPlayer = 'N';
-        if (paramChar == 'F')
-            currentPlayer = 0;
-        else
-            currentPlayer = 1;
-        int j = num_holes;
-        int k = num_holes * 2 + 1;
-        int[] arrayOfInt = Arrays.copyOf(paramArrayOfInt, paramArrayOfInt.length);
-        int m = arrayOfInt[paramInt];
-        int n = arrayOfInt.length;
-        arrayOfInt[paramInt] = 0;
-        int i1 = paramInt;
-        int i2 = paramChar == 'F' ? k : j;
-        int i3 = paramChar == 'F' ? j : k;
-        boolean bool = false;
-        while (m-- > 0) {
-            i1++;
-            int i4 = i1 % n;
-            if (i4 == i2)
-            {
-                m++;
-            }
-            else if (m == 0)
-            {
-                if (i4 == i3) {
-                    arrayOfInt[i4] += 1;
-                    for (i5 = 0; i5 < num_holes; i5++) {
-                        if (arrayOfInt[i5] > 0) bool = true;
-                    }
-                    break;
-                }
-                int i5 = (arrayOfInt[i4] == 0) && (Math.floor(i4 / (n / 2)) == i) ? 1 : 0;
-
-                if (i5 != 0) {
-                    arrayOfInt[i3] += 1;
-                    int i6 = 2 * num_holes - i4;
-                    arrayOfInt[i3] += arrayOfInt[i6];
-                    arrayOfInt[i6] = 0;
-                }
-                else
-                {
-                    arrayOfInt[i4] += 1;
-                }
-            } else {
-                arrayOfInt[i4] += 1;
-            }
-        }
-        return new Pair(arrayOfInt, Boolean.valueOf(bool));
-    }
-    */
 
     public int[][] updateBoard (int[][] houses, int selector, char player) {
         int side = 2;
@@ -108,40 +56,47 @@ public class Client
         try
         {
             for (;;) {
-                String str1 = in.readLine();
+                String str1 = this.in.readLine();
                 System.out.println("SERVER MESSAGE: " + str1);
                 String[] arrayOfString;
                 if (str1.startsWith("INFO")) {
-                    out.println("READY");
-                    out.println("I'M_SERVERSIDE_AI");
-                } /*else if (str1.startsWith("BOARD")) {
+                    this.out.println("READY");
+                    this.out.println("I'M_SERVERSIDE_AI");
+
                     arrayOfString = str1.split(" ");
-                    int[] arrayOfInt = new int[6 * 2 + 2];
-                    for (int i = 0; i < arrayOfString.length/2; i++) {
-                        arrayOfInt[(i - 1)] = Integer.parseInt(arrayOfString[i]);
-                    }
-                    String str2 = "";
-                    boolean bool = true;
-                    while (bool) {
-                        int j = Math.abs(new Random().nextInt()) % 6;
-                        if (arrayOfInt[j] > 0) {
-                            str2 = str2 + " " + String.valueOf(j + 1);
-                            int[][] houses = updateBoard(houses, j, 'F');
+                    this.seeds = Integer.parseInt(arrayOfString[2]);
+                    System.out.println("Seeds per pocket: " + String.valueOf(this.seeds));
+
+                } else if (str1.startsWith("BOARD")) {
+                    arrayOfString = str1.split(" ");
+                    int[][] arr = new int[2][7];
+                    for (int i = 0; i < 2; i++) {
+                        //arrayOfInt[(i - 1)] = Integer.parseInt(arrayOfString[i]);
+                        for (int j = 0; j < 7; j++) {
+                            arr[i][j] = Integer.parseInt(arrayOfString[j + (i * j)]);
                         }
                     }
-
-                    out.println(str2.trim());
-                } */else if (!str1.startsWith("OK")) {
+                    String str2 = "";
+                    for (int i = 0; i < 2; i++) {
+                        for (int j = 0; j < 7; j++) {
+                            if (arr[0][j] > 0) {
+                                str2 = str2 + " " + String.valueOf(j + 1);
+                                int[][] houses = updateBoard(arr, j, 'F');
+                            }
+                        }
+                    }
+                    this.out.println(str2.trim());
+                } else if (!str1.startsWith("OK")) {
                     if ((str1.startsWith("ILLEGAL")) ||
                             (str1.startsWith("WINNER")) ||
                             (str1.startsWith("LOSER"))) {
                         break;
                     }
-                    out.println("OK");
+                    this.out.println("OK");
                 }
             }
         } finally {
-            socket.close();
+            this.socket.close();
         }
     }
 
