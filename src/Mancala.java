@@ -67,6 +67,20 @@ public class Mancala {
         }
     }
 
+    public int[][] pie () {
+        int housesTemp[][] = new int[2][7];
+        for (int i = 0; i < houses.length; i++) {
+            housesTemp[0][i] = houses[1][i];
+            housesTemp[1][i] = houses[0][i];
+        }
+        houses = housesTemp;
+        return houses;
+    }
+
+    public int getHouseVal (int i, int j) {
+        return houses[i][j];
+    }
+
     public char getWinner() {
         if (houses[0][7] > houses[1][7])
             return 'F';
